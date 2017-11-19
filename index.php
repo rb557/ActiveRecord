@@ -91,77 +91,110 @@ class todos extends collection
 {
     protected static $modelName = 'todos';
 }
-class model {
-
-    protected $tableName;
+abstract class model{
+    // static $tableName;
+    static $key;
+    static $value;
+    static $id;
     public function save()
     {
-        if ($this->id = '') {
+        if (static::$idOfColumn == '')
+        {
+            $array = get_object_vars($this);
+            self::$key = implode(', ', $array);
+            self::$value = implode(', ', array_fill(0, count($array), '?'));
             $sql = $this->insert();
-        } else {
-            $sql = $this->update();
+            // echo $sql;
+            $db = dbConn::getConnection();
+            $statement = $db->prepare($sql);
+            $statement->execute(static::$dataToInsert);
         }
-        $db = dbConn::getConnection();
-        $statement = $db->prepare($sql);
-        $statement->execute();
-        $tableName = get_called_class();
-        $array = get_object_vars($this);
-        $columnString = implode(',', $array);
-        $valueString = ":".implode(',:', $array);
-        // echo "INSERT INTO $tableName (" . $columnString . ") VALUES (" . $valueString . ")</br>";
-        echo 'I just saved record: ' . $this->id;
+        else
+        {
+            $sql = $this->update();
+            $db = dbConn::getConnection();
+            $statement = $db->prepare($sql);
+            $statement->execute();
+            return $sql;
+            echo '<br>';
+            //  print_r( static::$columnId);
+        }
     }
     private function insert()
     {
-        $sql = 'sometthing';
+        $sql = "INSERT INTO ".static::$tableName." (".self::$key.") VALUES (".self::$value.")";
         return $sql;
-        //     $array = get_object_vars($this);
-        //     unset($array['tableName']);
-        //     $columnString = implode(',', array_keys($array));
-        //     foreach ($array as $value) {
-        //         $values[] .= "'" . $value . "'";
-        //     }
-        //     $valueString = implode(',', $values);
-        //     $sql = "INSERT INTO $this->tableName ($columnString) VALUES ( $valueString )";
-        //     return $sql;
     }
-
-    private function update() {
-        $sql = 'sometthing';
+    private function update()
+    {
+        $sql = "UPDATE ".static::$tableName." SET ".static::$columnToUpdate." = '".static::$updateData."' WHERE id=".static::$idOfColumn;
         return $sql;
-        echo 'I just updated record' . $this->id;
     }
-    public function delete() {
-        echo 'I just deleted record' . $this->id;
+    public function delete()
+    {
+        $db = dbConn::getConnection();
+        $sql = "DELETE from ".static::$tableName." WHERE id=".static::$idOfColumn;
+        $statement = $db->prepare($sql);
+        $statement->execute();
     }
 }
+
 class account extends model
 {
+    //column names
+    public $email = 'email';
+    public $fname = 'fname';
+    public $lname = 'lname';
+    public $phone = 'phone';
+    public $birthday = 'birthday';
+    public $gender = 'gender';
+    public $password = 'password';
+    //corresponding data
+    protected static $dataToInsert = array('nr123@njit.com','rohit','john','08103550744','10-10-1997','male','nr123');
+    //table name
+    public static $tableName = 'accounts';
+    //column to be updated
+    public static $columnToUpdate='lname';
+    //data to be inserted into column
+    protected static $updateData = 'Abraham';
+    //id to update
+    public static $idOfColumn = '6';
 }
 class todo extends model {
-    public $id;
-    public $owneremail;
-    public $ownerid;
-    public $createddate;
-    public $duedate;
-    public $message;
-    public $isdone;
-
-    public function __construct()
-    {
-        $this->tableName = 'todos';
-
-    }
+    // column names
+    public $owneremail = 'owneremail';
+    public $ownerid = 'ownerid';
+    public $createddate = 'createddate';
+    public $duedate = 'duedate';
+    public $message = 'message';
+    public $isdone = 'isdone';
+    //corresponding data
+    protected static $dataToInsert = array('rb42@njit.com','42','10/25/2017','12/28/2017','This is test #C','1');
+    //table name
+    public static $tableName = 'todos';
+    //column to be updated for update query
+    public static $columnToUpdate='owneremail';
+    //data to be updated into column
+    public static $updateData = 'nnn@test.com';
+    //id to update
+    public static $idOfColumn = '';
 }
+
 // this would be the method to put in the index page for accounts
 echo '<h1>Select all from accounts table</h1>';
+$obj = new account;
+$obj->save();
 $obj=accounts::create();
 $records = $obj->findAll();
+//$tab=new htmlTable;
+//$tab->makeTable($records);
 htmlTable::createTable($records);
 echo '<br>';
 echo '<br>';
 
 echo '<h1>Select all from todos table</h1>';
+$obj = new todo;
+$obj->save();
 $obj=todos::create();
 $records = $obj->findAll();
 htmlTable::createTable($records);
@@ -169,6 +202,8 @@ echo '<br>';
 echo '<br>';
 
 echo '<h1>Select one from todos table</h1>';
+$obj = new todo;
+$obj->save();
 $obj=todos::create();
 $records = $obj->findOne(1);
 htmlTable::createTable($records);
@@ -176,11 +211,39 @@ echo '<br>';
 echo '<br>';
 
 echo '<h1>Select one from accounts table</h1>';
+$obj = new account;
+$obj->save();
 $obj=accounts::create();
 $records = $obj->findOne(1);
 htmlTable::createTable($records);
 echo '<br>';
 echo '<br>';
+
+//echo '<h1>Insert New Row in Todos Column <h1>';
+//$obj = new todo;
+//$obj->save();
+//$records = todos::create();
+//$result= $records->findAll();
+//table::makeTable($result);
+//echo '<br>';
+//echo '<br>';
+
+echo '<h1>Update Phone Column in Accounts Table where ID is : 8 <h1>';
+$obj = new account;
+$obj->save();
+$obj = accounts::create();
+$result = $obj->findAll();
+htmlTable::createTable($result);
+echo '<br>';
+echo '<br>';
+
+echo '<h1>Delete ID 6 from Todos Table <h1>';
+$obj = new todo;
+$obj->save();
+$records = todos::create();
+$result= $records->findAll();
+htmlTable::createTable($result);
+//table::makeTable($result);
 
 //echo '<h1>Insert a record into todos table</h1>';
 //$obj=todos::create();
